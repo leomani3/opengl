@@ -160,6 +160,9 @@ int main(void)
 	// Callbacks
 	glDebugMessageCallback(opengl_error_callback, nullptr);
 
+
+
+
 	const size_t nParticules = 1000;
 	const auto particules = MakeParticules(nParticules);
 
@@ -182,15 +185,23 @@ int main(void)
 	glBufferData(GL_ARRAY_BUFFER, nParticules * sizeof(Particule), particules.data(), GL_STATIC_DRAW);
 
 	// Bindings
-	const auto index = glGetAttribLocation(program, "position");
+	auto index = glGetAttribLocation(program, "position");
 
 	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(Particule), nullptr);
+	glEnableVertexAttribArray(index);
+
+	//color
+	index = glGetAttribLocation(program, "color");
+
+	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(Particule), (void*)12);
 	glEnableVertexAttribArray(index);
 
 	glPointSize(20.f);
 
 	while (!glfwWindowShouldClose(window))
 	{
+		int uniformScale = glGetUniformLocation(program, "scale");
+		glProgramUniform1f(program, uniformScale, 0.5);
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 

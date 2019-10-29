@@ -1,17 +1,2 @@
-﻿  glad.c
-  main.cpp
-  stl.cpp
-  texture.cpp
-D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(16235): warning C4319: '~' : zéro étendant 'unsigned int' vers 'double' d'une taille supérieure
-  D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(14788): note: pendant la compilation de la fonction membre '<Inconnu>' (classe <Inconnu>)
-  D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(14666): note: voir la référence à l'instanciation de la fonction modèle 'unsigned int cimg_library::CImg<float>::_cimg_math_parser::compile(char *,char *,const unsigned int,unsigned int *const )' en cours de compilation
-  D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(23042): note: voir la référence à l'instanciation de classe modèle 'cimg_library::CImg<float>::_cimg_math_parser' en cours de compilation
-  D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(23031): note: pendant la compilation de la fonction membre '<Inconnu>' (classe <Inconnu>)
-  D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(23026): note: voir la référence à l'instanciation de la fonction modèle 'double cimg_library::CImg<float>::_eval(cimg_library::CImg<float> *const ,const char *const ,const double,const double,const double,const double,const cimg_library::CImgList<float> *const ,cimg_library::CImgList<float> *const ) const' en cours de compilation
-  D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(58646): note: voir la référence à l'instanciation de classe modèle 'cimg_library::CImg<float>' en cours de compilation
-D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(19231): warning C4319: '~' : zéro étendant 'unsigned int' vers 'double' d'une taille supérieure
-  D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(19229): note: pendant la compilation de la fonction membre '<Inconnu>' (classe <Inconnu>)
-  D:\GAMAGORA\Animation\opengl\CImg\include\CImg.h(16234): note: voir la référence à l'instanciation de la fonction modèle 'double cimg_library::CImg<float>::_cimg_math_parser::mp_bitwise_not(cimg_library::CImg<float>::_cimg_math_parser &)' en cours de compilation
-  Génération de code en cours...
-LINK : warning LNK4098: conflit entre la bibliothèque par défaut 'MSVCRT' et les autres bibliothèques ; utilisez /NODEFAULTLIB:library
+﻿  main.cpp
   opengl.vcxproj -> D:\GAMAGORA\Animation\opengl\x64\Debug\opengl.exe
