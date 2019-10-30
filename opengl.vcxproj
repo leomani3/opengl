@@ -147,6 +147,7 @@
     <ClInclude Include="tinyply\include\tinyply.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="logo.stl" />
     <None Include="shader.frag" />
     <None Include="shader.vert" />
   </ItemGroup>

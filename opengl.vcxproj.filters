@@ -106,5 +106,8 @@
     <None Include="shader.vert">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="logo.stl">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

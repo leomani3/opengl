@@ -8,6 +8,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include "stl.h"
 
 #define TINYPLY_IMPLEMENTATION
 #include <tinyply.h>
@@ -57,6 +58,10 @@ std::vector<Particule> MakeParticules(const int n)
 	}
 
 	return p;
+}
+
+void PrintVec3(glm::vec3 v) {
+	printf("%f, %f, %f\n", v.x, v.y, v.z);
 }
 
 GLuint MakeShader(GLuint t, std::string path)
@@ -166,6 +171,17 @@ int main(void)
 	const size_t nParticules = 1000;
 	const auto particules = MakeParticules(nParticules);
 
+	//On lit le mesh
+	std::vector<Triangle> triangles = ReadStl("logo.stl");
+	//On le range sous la forme d'un vecteur de points et non plus de triangles
+	std::vector<glm::vec3> meshPoints;
+	meshPoints.reserve(triangles.size() * 3);
+	for (int i = 0; i < triangles.size(); i++) {
+		meshPoints.push_back(triangles[i].p0);
+		meshPoints.push_back(triangles[i].p1);
+		meshPoints.push_back(triangles[i].p2);
+	}
+
 	// Shader
 	const auto vertex = MakeShader(GL_VERTEX_SHADER, "shader.vert");
 	const auto fragment = MakeShader(GL_FRAGMENT_SHADER, "shader.frag");
@@ -182,26 +198,28 @@ int main(void)
 
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, nParticules * sizeof(Particule), particules.data(), GL_STATIC_DRAW);
+	//glBufferData(GL_ARRAY_BUFFER, nParticules * sizeof(Particule), particules.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, meshPoints.size() * sizeof(glm::vec3), meshPoints.data(), GL_STATIC_DRAW);
 
 	// Bindings
 	auto index = glGetAttribLocation(program, "position");
 
-	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(Particule), nullptr);
+	//glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(Particule), nullptr);
+	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
 	glEnableVertexAttribArray(index);
 
 	//color
-	index = glGetAttribLocation(program, "color");
+	/*index = glGetAttribLocation(program, "color");
 
 	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(Particule), (void*)12);
-	glEnableVertexAttribArray(index);
+	glEnableVertexAttribArray(index);*/
 
 	glPointSize(20.f);
 
 	while (!glfwWindowShouldClose(window))
 	{
 		int uniformScale = glGetUniformLocation(program, "scale");
-		glProgramUniform1f(program, uniformScale, 0.5);
+		glProgramUniform1f(program, uniformScale, 0.01);
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 
@@ -210,7 +228,7 @@ int main(void)
 		glClear(GL_COLOR_BUFFER_BIT);
 		// glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 
-		glDrawArrays(GL_POINTS, 0, nParticules);
+		glDrawArrays(GL_TRIANGLES, 0, meshPoints.size());
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
