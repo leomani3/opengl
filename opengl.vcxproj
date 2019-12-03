@@ -142,6 +142,7 @@
     <ClInclude Include="cimg\include\cimg\plugins\vtk.h" />
     <ClInclude Include="glad\include\glad\glad.h" />
     <ClInclude Include="glad\include\khr\khrplatform.h" />
+    <ClInclude Include="OBJLoader.h" />
     <ClInclude Include="stl.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="tinyply\include\tinyply.h" />

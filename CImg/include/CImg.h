@@ -46071,7 +46071,7 @@ namespace cimg_library_suffixed {
           else is_loaded = false;
         } catch (CImgIOException&) { is_loaded = false; }
       }
-
+	   
       // If nothing loaded, try to load file with other means.
       if (!is_loaded) {
         try {

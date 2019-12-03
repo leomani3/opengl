@@ -98,6 +98,9 @@
     <ClInclude Include="tinyply\include\tinyply.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OBJLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shader.frag">
