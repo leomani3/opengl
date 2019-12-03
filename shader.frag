@@ -1,13 +1,10 @@
 #version 450
 
-out vec4 color;
+out vec3 color;
 
-in vec3 color_out;
-in vec2 uv;
-
-uniform sampler2D Texture;
+in vec3 particle_color;
 
 void main()
 {
-    color = texture(Texture,uv);
+    color = particle_color;
 }

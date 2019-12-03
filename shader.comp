@@ -1,0 +1,41 @@
+#version 450
+
+uniform float dt;
+
+layout(local_size_x = 32) in;
+
+struct particule
+{
+	vec4 position;
+	vec4 color;
+	vec4 speed;
+};
+
+layout(std430, binding = 0) buffer parts
+{
+	particule particules[];
+};
+
+
+void main()
+{
+	particules[gl_GlobalInvocationID.x].speed.y += particules[gl_GlobalInvocationID.x].position.w * -9.81f;
+	particules[gl_GlobalInvocationID.x].position.xy += particules[gl_GlobalInvocationID.x].speed.xy * dt;
+
+	if (particules[gl_GlobalInvocationID.x].position.x > 0.98f)
+	{
+		particules[gl_GlobalInvocationID.x].position.x = 0.98f;
+		particules[gl_GlobalInvocationID.x].speed = vec4(0.f, particules[gl_GlobalInvocationID.x].speed.y, 0.f, 1.f);
+	}
+	if (particules[gl_GlobalInvocationID.x].position.y < -0.98)
+	{
+		particules[gl_GlobalInvocationID.x].position.y = -0.98;
+		particules[gl_GlobalInvocationID.x].speed = vec4(0, 0, 0, 0);
+		particules[gl_GlobalInvocationID.x].position.w = 0;
+	}
+
+	particules[gl_GlobalInvocationID.x].color.w -= dt;
+	
+	if(particules[gl_GlobalInvocationID.x].color.w < 0.0f){
+	}
+}

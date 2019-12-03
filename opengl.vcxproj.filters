@@ -112,5 +112,8 @@
     <None Include="logo.stl">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="shader.comp">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -149,6 +149,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="logo.stl" />
+    <None Include="shader.comp" />
     <None Include="shader.frag" />
     <None Include="shader.vert" />
   </ItemGroup>

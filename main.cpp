@@ -1,6 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
@@ -12,29 +12,20 @@
 #include <string>
 
 #define TINYPLY_IMPLEMENTATION
-
 #include <tinyply.h>
-#include "stl.h"
-#include "texture.h"
-#include "OBJLoader.h"
 
 float distancez = 10.0f;
-int width, height;
+const float g = -9.81f;
+std::default_random_engine generator;
+std::uniform_real_distribution<float> distribution01(0, 1);
+std::uniform_real_distribution<float> distributionWorld(-1, 1);
+std::uniform_real_distribution<float> distributionSpeedX(0.3f, 1.0f);
+std::uniform_real_distribution<float> distributionSpeedY(0.3f, 0.5f);
+std::uniform_real_distribution<float> distributionLifeTime(3.0f, 6.0f);
+std::uniform_real_distribution<float> distributionMass(0.0001f, 0.0001f);
+glm::vec3 spawnPoint = glm::vec3(-0.5f, 0.5f, 0);
 
-
-static void error_callback(int /*error*/, const char* description)
-{
-	std::cerr << "Error: " << description << std::endl;
-}
-
-static void key_callback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/)
-{
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
-
-}
-
-void scroll_callback(GLFWwindow * window, double xoffset, double yoffset)
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	std::cout << yoffset << std::endl;
 	if (yoffset < 0) {
@@ -46,41 +37,55 @@ void scroll_callback(GLFWwindow * window, double xoffset, double yoffset)
 
 }
 
+static void error_callback(int /*error*/, const char* description)
+{
+	std::cerr << "Error: " << description << std::endl;
+}
+
+static void key_callback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/)
+{
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
 /* PARTICULES */
 struct Particule {
-	glm::vec3 position;
-	glm::vec3 color;
-	glm::vec3 speed;
-};
-
-struct Vertex {
-	glm::vec3 position;
-	glm::vec2 uv;
+	glm::vec4 position;
+	glm::vec4 color;
+	glm::vec4 speed;
 };
 
 std::vector<Particule> MakeParticules(const int n)
 {
-	std::default_random_engine generator;
-	std::uniform_real_distribution<float> distribution01(0, 1);
-	std::uniform_real_distribution<float> distributionWorld(-1, 1);
+
 
 	std::vector<Particule> p;
 	p.reserve(n);
-
+	
 	for (int i = 0; i < n; i++)
 	{
 		p.push_back(Particule{
 				{
 				distributionWorld(generator),
 				distributionWorld(generator),
-				distributionWorld(generator)
+				0.f,
+				distributionMass(generator)
+				//glm::vec4(spawnPoint.x, spawnPoint.y, spawnPoint.z, distributionMass(generator))
 				},
 				{
 				distribution01(generator),
 				distribution01(generator),
-				distribution01(generator)
+				distribution01(generator),
+				distributionLifeTime(generator)
 				},
-				{0.f, 0.f, 0.f}
+				{
+					distributionSpeedX(generator),
+					distributionSpeedY(generator),
+					0.f,
+					0.f
+				}
+				//distributionMass(generator),
+				//distributionLifeTime(generator)
 			});
 	}
 
@@ -167,7 +172,7 @@ int main(void)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
-	window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+	window = glfwCreateWindow(1080, 720, "Simple example", NULL, NULL);
 
 	if (!window)
 	{
@@ -175,12 +180,10 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
-
-	// NOTE: OpenGL error checks have been omitted for brevity
-	//apelle de touche 
 	glfwSetKeyCallback(window, key_callback);
 	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1);
+	//glfwSwapInterval(1);
+	// NOTE: OpenGL error checks have been omitted for brevity
 
 	if (!gladLoadGL()) {
 		std::cerr << "Something went wrong!" << std::endl;
@@ -190,140 +193,107 @@ int main(void)
 	// Callbacks
 	glDebugMessageCallback(opengl_error_callback, nullptr);
 
+	const size_t nParticules = 32 * 60000;
+	auto particules = MakeParticules(nParticules);
+
 	// Shader
 	const auto vertex = MakeShader(GL_VERTEX_SHADER, "shader.vert");
 	const auto fragment = MakeShader(GL_FRAGMENT_SHADER, "shader.frag");
+	const auto compute = MakeShader(GL_COMPUTE_SHADER, "shader.comp");
 
 	const auto program = AttachAndLink({ vertex, fragment });
 
 	glUseProgram(program);
 
+	const auto compute_program = AttachAndLink({ compute });
 
-	//affichage du logo STL
-	vector<Triangle> logo = ReadStl("house_targaryen.stl");
-
-	//Load l'image---------------------
-	Image texture = LoadImage("wood.bmp");
-
-	//load obj--------------------------
-	std::vector<glm::vec3> verticesOBJ;
-	std::vector<glm::vec2> uvsOBJ;
-	std::vector<glm::vec3> normalsOBJ;
-	const char* filename = "cube.obj";
-	loadOBJ(filename, verticesOBJ, uvsOBJ, normalsOBJ);
-
-	std::vector<Vertex> cubeVert;
-
-	for (unsigned int i = 0; i < verticesOBJ.size(); i++)
-	{
-		cubeVert.push_back({
-			verticesOBJ[i],
-			uvsOBJ[i]
-			});
-	}
 
 	// Buffers
 	GLuint vbo, vao;
 	glGenBuffers(1, &vbo);
 	glGenVertexArrays(1, &vao);
+
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, cubeVert.size() * sizeof(Vertex), cubeVert.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, nParticules * sizeof(Particule), particules.data(), GL_STATIC_DRAW);
 
-	//position
+	// Bindings
 	const auto index = glGetAttribLocation(program, "position");
-	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
+
+	glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(Particule), nullptr);
 	glEnableVertexAttribArray(index);
 
-	//normal
-	/*const auto indexNormal = glGetAttribLocation(program, "normal");
-	glVertexAttribPointer(indexNormal, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3) * 2, (void*)(sizeof(glm::vec3) + sizeof(glm::vec2)));
-	glEnableVertexAttribArray(indexNormal);*/
+	int uniform_dt = glGetUniformLocation(compute_program, "dt");
 
-	//---------------------------Texture --- de BOIS---------------------------------------------------------
-	GLuint textureId;
-	glCreateTextures(GL_TEXTURE_2D, 1, &textureId);
-	glTextureStorage2D(textureId, 1, GL_RGB8, texture.width, texture.height);
-	glTextureSubImage2D(textureId, 0, 0, 0, texture.width, texture.height, GL_RGB, GL_UNSIGNED_BYTE, texture.data.data());
-	const auto indextexture = glGetAttribLocation(program, "uv_in");
-	glVertexAttribPointer(indextexture, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(glm::vec3)));
-	glEnableVertexAttribArray(indextexture);
-	int uniformTexture = glGetUniformLocation(program, "Texture");
-	glProgramUniform1i(program, uniformTexture, 0);
+	//couleur particules
+	const auto particleColor = glGetAttribLocation(program, "colorP");
+	glVertexAttribPointer(particleColor, 3, GL_FLOAT, GL_FALSE, sizeof(Particule), (void*)sizeof(glm::vec4));
+	glEnableVertexAttribArray(particleColor);
 
-	//----------------------------------------texture frame buffer color--------------------------------------
-	GLuint textureColorFrameBuffer;
-	glCreateTextures(GL_TEXTURE_2D, 1, &textureColorFrameBuffer);
-	glTextureStorage2D(textureColorFrameBuffer, 1, GL_RGB8, 500, 500);
+	glPointSize(2.f);
 
-	//----------------------------------------texture frame buffer Depth----------------------------------------
-	GLuint textureDepthFrameBuffer;
-	glCreateTextures(GL_TEXTURE_2D, 1, &textureDepthFrameBuffer);
-	glTextureStorage2D(textureDepthFrameBuffer, 1, GL_DEPTH_COMPONENT16, 500, 500);
-
-	//FRAME BUFFER
-	GLuint frameBufferId = 1;
-	glCreateFramebuffers(1, &frameBufferId);
-	glNamedFramebufferTexture(frameBufferId, GL_COLOR_ATTACHMENT0, textureColorFrameBuffer, 0);
-	glNamedFramebufferTexture(frameBufferId, GL_DEPTH_ATTACHMENT, textureDepthFrameBuffer, 0);
-
-	//glNamedFramebufferTexture()
-	//glBindframebuffer*/
-
-
-	float scale = 1.0f;
-	glm::mat4 scaleMat = glm::scale(glm::vec3(scale, scale, scale));
-
-	float rotate = 0.0f;
-	float angle = 90.0f;
-	float rad = angle * 180.0 / 3.1415;
-
-	glEnable(GL_DEPTH_TEST);
+	double lastFrameTime = glfwGetTime();
 
 	while (!glfwWindowShouldClose(window))
 	{
-		glfwSetScrollCallback(window, scroll_callback);
+		double dt = glfwGetTime() - lastFrameTime;
+		lastFrameTime = glfwGetTime();
+		std::cout << "fps : " << 1/dt << std::endl;
+		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
+		glfwSetScrollCallback(window, scroll_callback);
 
-		//CUBE
-			//couleur
-		glm::vec3 green = glm::vec3(0.f, 1.f, 1.f);
-		int uniformCouleur = glGetUniformLocation(program, "color");
-		glProgramUniform3f(program, uniformCouleur, green.x, green.y, green.z);
-
-		//-----------------------------TRANSFORM-----------------------------
-		angle += 0.05f;
-		glm::mat4 rotateMat = glm::rotate(angle, glm::vec3(0.0f, 1.0f, 1.0f));
-		glm::mat4 mat = scaleMat * rotateMat;
-		int uniformTransform = glGetUniformLocation(program, "Mat");
-		glProgramUniformMatrix4fv(program, uniformTransform, 1, GL_FALSE, &mat[0][0]);
-
-		//-----------------------------PROJECTION-----------------------------
-		glm::mat4 projection = glm::perspective(rad, float(width / height), 0.1f, 1000.0f);
-		int uniformProjection = glGetUniformLocation(program, "projection");
-		glProgramUniformMatrix4fv(program, uniformProjection, 1, GL_FALSE, &projection[0][0]);
+		glProgramUniform1f(compute_program, uniform_dt, dt);
 
 		//-----------------------------VIEW-----------------------------
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, distancez), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		/*glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, distancez), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		int uniformView = glGetUniformLocation(program, "view");
-		glProgramUniformMatrix4fv(program, uniformView, 1, GL_FALSE, &view[0][0]);
+		glProgramUniformMatrix4fv(program, uniformView, 1, GL_FALSE, &view[0][0]);*/
+
+		/*//SANS COMPUTE SHADER
+		for (int i = 0; i < particules.size(); i++) {
+			particules[i].speed.y += particules[i].position.w * g;
+			particules[i].position += glm::vec4(particules[i].speed.x * dt, particules[i].speed.y * dt, 0.f, 0.f);
+
+			if (particules[i].position.x > 0.98f)
+			{
+				particules[i].position.x = 0.98f;
+				particules[i].speed = glm::vec4(0.f, particules[i].speed.y, 0.f, 1.f);
+			}
+			if (particules[i].position.y < -0.98)
+			{
+				particules[i].position.y = -0.98;
+				particules[i].speed = glm::vec4(0, 0, 0, 0);
+				particules[i].position.w= 0;
+			}
+
+			//on réduit la durée de vie et on test si la particule est morte
+			particules[i].color.w -= dt;
+			if (particules[i].color.w < 0.0f)
+			{
+				//tp la particule au spawn
+				//Respawn(&particules[i]);
+			}
+		}*/
+
+		glBufferSubData(GL_ARRAY_BUFFER, 0, nParticules * sizeof(Particule), particules.data());
 
 
-		//je dessine sur le frame buffer
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBufferId);
-		glViewport(0, 0, 500, 500);
-		glBindTextureUnit(0, textureId);
-		glClearColor(0.6f, 0.6f, 0.6f, 1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDrawArrays(GL_TRIANGLES, 0, verticesOBJ.size() * 3);
+		//AVEC COMPUTE SHADER
+		glUseProgram(compute_program);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vbo);
 
-		//je dessine sur le frame buffer de la fenetre
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glDispatchCompute(nParticules / 32, 1, 1);
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+		glUseProgram(program);
+
 		glViewport(0, 0, width, height);
-		glBindTextureUnit(0, textureColorFrameBuffer);
-		glClearColor(0.2f, 0.2f, 0.2f, 1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDrawArrays(GL_TRIANGLES, 0, verticesOBJ.size() * 3);
+
+		glClear(GL_COLOR_BUFFER_BIT);
+		// glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+
+		glDrawArrays(GL_POINTS, 0, nParticules);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
